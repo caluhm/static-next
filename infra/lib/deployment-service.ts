@@ -4,12 +4,24 @@ import { Distribution, ViewerProtocolPolicy } from "aws-cdk-lib/aws-cloudfront";
 import { S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as apigw from "aws-cdk-lib/aws-apigateway";
 
 const path = "./resources/build";
 
 export class DeploymentService extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
+
+    const random = new lambda.Function(this, "RandomHandler", {
+      runtime: lambda.Runtime.NODEJS_16_X, // execution environment
+      code: lambda.Code.fromAsset("lambda"), // code loaded from "lambda" directory
+      handler: "random.handler", // file is "random", function is "handler"
+    });
+
+    new apigw.LambdaRestApi(this, "Endpoint", {
+      handler: random,
+    });
 
     const hostingBucket = new Bucket(this, "FrontendBucket", {
       autoDeleteObjects: true,
